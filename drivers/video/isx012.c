@@ -216,7 +216,7 @@ typedef struct isx012_dev_s isx012_dev_t;
 static uint16_t isx012_getreg(FAR isx012_dev_t *priv,
                               uint16_t regaddr, uint16_t regsize);
 static int     isx012_putreg(FAR isx012_dev_t *priv, uint16_t regaddr,
-                             uint16_t regval, uint16_t regsize);
+                             uint32_t regval, uint16_t regsize);
 static int     isx012_putreglist(FAR isx012_dev_t *priv,
                          FAR const isx012_reg_t *reglist, size_t nentries);
 #ifdef ISX012_CHECK_IN_DETAIL
@@ -676,8 +676,8 @@ static uint16_t isx012_getreg(FAR isx012_dev_t *priv,
                               uint16_t regaddr, uint16_t regsize)
 {
   struct i2c_config_s config;
-  volatile uint16_t regval = 0;
-  volatile uint8_t buffer[2];
+  uint16_t regval = 0;
+  uint8_t buffer[2];
   int ret;
 
   /* Set up the I2C configuration */
@@ -719,11 +719,13 @@ static uint16_t isx012_getreg(FAR isx012_dev_t *priv,
 }
 
 static int isx012_putreg(FAR isx012_dev_t *priv,
-                         uint16_t regaddr, uint16_t regval, uint16_t regsize)
+                         uint16_t regaddr, uint32_t regval, uint16_t regsize)
 {
   struct i2c_config_s config;
-  volatile uint8_t buffer[4];
+  uint8_t buffer[6];
   int ret;
+
+  DEBUGASSERT(regsize <= 4);
 
   /* Set up the I2C configuration */
 
@@ -779,7 +781,7 @@ static int isx012_chk_int_state(FAR isx012_dev_t *priv,
                                 uint32_t wait_time, uint32_t timeout)
 {
   int ret = 0;
-  volatile uint8_t data;
+  uint8_t data;
   uint32_t time = 0;
 
   nxsig_usleep(delay_time * 1000);
@@ -1764,7 +1766,7 @@ static int isx012_get_supported_value(FAR struct imgsensor_s *sensor,
         break;
 
       case IMGSENSOR_ID_CONTRAST:
-        value->type          = IMGSENSOR_CTRL_TYPE_U8FIXEDPOINT_Q7;
+        value->type          = IMGSENSOR_CTRL_TYPE_INTEGER;
         range->minimum       = ISX012_MIN_CONTRAST;
         range->maximum       = ISX012_MAX_CONTRAST;
         range->step          = ISX012_STEP_CONTRAST;
@@ -1808,7 +1810,7 @@ static int isx012_get_supported_value(FAR struct imgsensor_s *sensor,
         break;
 
       case IMGSENSOR_ID_EXPOSURE:
-        value->type          = IMGSENSOR_CTRL_TYPE_INTEGER_TIMES_3;
+        value->type          = IMGSENSOR_CTRL_TYPE_INTEGER;
         range->minimum       = ISX012_MIN_EXPOSURE;
         range->maximum       = ISX012_MAX_EXPOSURE;
         range->step          = ISX012_STEP_EXPOSURE;
@@ -1925,7 +1927,7 @@ static int isx012_get_supported_value(FAR struct imgsensor_s *sensor,
         break;
 
       case IMGSENSOR_ID_WIDE_DYNAMIC_RANGE:
-        value->type          = IMGSENSOR_CTRL_TYPE_BOOLEAN;
+        value->type          = IMGSENSOR_CTRL_TYPE_INTEGER;
         range->minimum       = ISX012_MIN_YGAMMA;
         range->maximum       = ISX012_MAX_YGAMMA;
         range->step          = ISX012_STEP_YGAMMA;

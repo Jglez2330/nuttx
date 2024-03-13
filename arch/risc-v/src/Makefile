@@ -18,7 +18,7 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+include $(TOPDIR)/tools/apps-or-nuttx-Make.defs
 include chip/Make.defs
 ifeq ($(CONFIG_OPENSBI),y)
 include opensbi/Make.defs
@@ -130,6 +130,7 @@ endif
 
 VPATH += chip
 VPATH += common
+VPATH += common/espressif
 VPATH += $(SBI_DIR)
 VPATH += $(ARCH_SUBDIR)
 VPATH += $(CHIP_DIR)

@@ -241,6 +241,32 @@ config ESP32_EMAC
 	---help---
 		Enable ESP32 ethernet support.
 
+config ESP32_OPENETH
+	bool "Opencores Ethernet MAC"
+	default n
+	depends on !ESP32_EMAC
+	select NET
+	select SCHED_WORKQUEUE
+	---help---
+		Enable ESP32 ethernet opencores support for use with QEMU.
+		Disable this if you are using the real device.
+
+if ESP32_OPENETH
+	config ESP32_OPENETH_DMA_RX_BUFFER_NUM
+		int "Number of Ethernet DMA Rx buffers"
+		range 1 64
+		default 4
+		help
+			Number of DMA receive buffers, each buffer is 1600 bytes.
+
+	config ESP32_OPENETH_DMA_TX_BUFFER_NUM
+		int "Number of Ethernet DMA Tx buffers"
+		range 1 64
+		default 1
+		help
+			Number of DMA transmit buffers, each buffer is 1600 bytes.
+endif
+
 config ESP32_I2C
 	bool
 	default n
@@ -2354,6 +2380,35 @@ config ESP32_RTC_CLK_SRC_INT_8MD256
 
 endchoice
 endmenu # "RTC Configuration"
+
+menu "DAC Configuration"
+	depends on ANALOG && DAC
+
+config ESP32_DAC_DEVPATH
+	string "DAC device path"
+	default "/dev/dac0"
+
+choice ESP32_DAC_MODE
+	prompt "DAC mode of operation"
+	default ESP32_DAC_MODE_ONE_SHOT
+	---help---
+		One-shot mode requires to write every single value with a write call while
+		retaining the last value on output.
+
+		Following modes are not implemented yet.
+		Timer mode utilizes timer IRQs to call handler which can manage the write.
+		DMA is using a ring buffer accessed directly by the driver.
+		Cosine Wave Generator can output preset wave without the need to generate
+		the data and write in memory.
+
+config ESP32_DAC_MODE_ONE_SHOT
+	bool "One-shot mode"
+	---help---
+		One-shot mode requires to write every single value with a write call while
+		retaining the last value on output.
+
+endchoice # "DAC mode of operation"
+endmenu # "DAC Configuration"
 
 menu "LEDC Configuration"
 	depends on ESP32_LEDC

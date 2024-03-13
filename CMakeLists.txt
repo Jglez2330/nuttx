@@ -84,7 +84,12 @@ if(NOT KCONFIGLIB)
   $ pip install kconfiglib")
 endif()
 
-if(EXISTS ${BOARD_CONFIG} AND EXISTS ${BOARD_CONFIG}/defconfig)
+# BOARD CONFIG can be set to directory path, or <board-name>[/:]<config-name>
+# configuration pair
+
+if((EXISTS ${BOARD_CONFIG} AND EXISTS ${BOARD_CONFIG}/defconfig)
+   OR (EXISTS ${NUTTX_DIR}/${BOARD_CONFIG}
+       AND EXISTS ${NUTTX_DIR}/${BOARD_CONFIG}/defconfig))
   get_filename_component(NUTTX_BOARD_ABS_DIR ${BOARD_CONFIG} ABSOLUTE BASE_DIR
                          ${NUTTX_DIR})
 
@@ -103,7 +108,7 @@ if(EXISTS ${BOARD_CONFIG} AND EXISTS ${BOARD_CONFIG}/defconfig)
 
   string(REGEX REPLACE "(.*)/(.*)/${NUTTX_CONFIG}" "\\1" NUTTX_BOARD_DIR
                        ${NUTTX_BOARD_ABS_DIR})
-  set(NUTTX_DEFCONFIG ${BOARD_CONFIG}/defconfig)
+  set(NUTTX_DEFCONFIG ${NUTTX_BOARD_ABS_DIR}/defconfig)
 else()
   if(BOARD_CONFIG MATCHES "/")
     set(MATCH_REGEX "/")
@@ -476,13 +481,15 @@ if(WIN32)
 else()
   add_compile_options(
     # system wide warnings
-    -Wall
-    $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
-    -Wshadow
-    -Wundef
+    -Wall $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes> -Wshadow -Wundef
     # system wide options
-    $<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>
     $<$<COMPILE_LANGUAGE:ASM>:-D__ASSEMBLY__>)
+endif()
+
+if(NOT CONFIG_LIBCXXTOOLCHAIN)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>)
+else()
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-D_STDLIB_H_>)
 endif()
 
 if(NOT CONFIG_CXX_EXCEPTION)

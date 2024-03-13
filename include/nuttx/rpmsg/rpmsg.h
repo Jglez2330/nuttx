@@ -29,7 +29,17 @@
 
 #ifdef CONFIG_RPMSG
 
+#include <nuttx/fs/ioctl.h>
+#include <nuttx/rpmsg/rpmsg_ping.h>
 #include <openamp/rpmsg.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define RPMSGIOC_PANIC              _RPMSGIOC(1)
+#define RPMSGIOC_DUMP               _RPMSGIOC(2)
+#define RPMSGIOC_PING               _RPMSGIOC(3)
 
 /****************************************************************************
  * Public Types
@@ -41,6 +51,9 @@ struct rpmsg_s
   rmutex_t                     lock;
   struct metal_list            node;
   FAR const struct rpmsg_ops_s *ops;
+#ifdef CONFIG_RPMSG_PING
+  struct rpmsg_endpoint        ping;
+#endif
   struct rpmsg_device          rdev[0];
 };
 
@@ -58,6 +71,8 @@ struct rpmsg_ops_s
   CODE int (*wait)(FAR struct rpmsg_s *rpmsg, FAR sem_t *sem);
   CODE int (*post)(FAR struct rpmsg_s *rpmsg, FAR sem_t *sem);
   CODE int (*ioctl)(FAR struct rpmsg_s *rpmsg, int cmd, unsigned long arg);
+  CODE void (*panic)(FAR struct rpmsg_s *rpmsg);
+  CODE void (*dump)(FAR struct rpmsg_s *rpmsg);
   CODE FAR const char *(*get_cpuname)(FAR struct rpmsg_s *rpmsg);
   CODE int (*get_tx_buffer_size)(FAR struct rpmsg_s *rpmsg);
   CODE int (*get_rx_buffer_size)(FAR struct rpmsg_s *rpmsg);
@@ -112,6 +127,9 @@ int rpmsg_register(FAR const char *path, FAR struct rpmsg_s *rpmsg,
                    FAR const struct rpmsg_ops_s *ops);
 void rpmsg_unregister(FAR const char *path, FAR struct rpmsg_s *rpmsg);
 int rpmsg_ioctl(FAR const char *cpuname, int cmd, unsigned long arg);
+
+int rpmsg_panic(FAR const char *cpuname);
+void rpmsg_dump_all(void);
 
 #ifdef __cplusplus
 }

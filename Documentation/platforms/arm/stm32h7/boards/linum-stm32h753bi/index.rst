@@ -115,25 +115,26 @@ The LINUM-STM32H753BI board has two on-board RS-485 transceiver connected to USA
   DE     PG12  
   ====== =====
   
-SDCARD
+SDMMC
 ======
 
 The LINUM-STM32H753BI has one SDCard slot connected as below:
 
   ========== =====
-  SDMMC1       PINS
+  SDMMC1     PINS
   ========== =====
-  SDMMC_D0    PC8
-  SDMMC_D1    PC9
-  SDMMC_D2    PC10
-  SDMMC_D3    PC11
-  SDMMC_DK    PC12
+  SDMMC_D0   PC8
+  SDMMC_D1   PC9
+  SDMMC_D2   PC10
+  SDMMC_D3   PC11
+  SDMMC_DK   PC12
   ========== =====
 
   =============== =====
   GPIO            PINS
   =============== =====
   SDCARD_DETECTED PG7
+  SDCARD_PWR_EN   PD7
   =============== =====      
 
 ETHERNET
@@ -183,14 +184,15 @@ USB
 
 The LINUM-STM32H753BI has one usb port.
 
-  ======= =====
-  USB     PINS
-  ======= =====
-  USB_N   PA11
-  USB_P   PA12
-  USB_EN  PI12
-  USB_FLT PI13
-  ======= =====
+  ========= =====
+  USB       PINS
+  ========= =====
+  USB_VBUS  PA9
+  USB_N     PA11
+  USB_P     PA12
+  USB_EN    PI12
+  USB_FLT   PI13
+  ========= =====
 
 QUADSPI
 ==============
@@ -223,7 +225,7 @@ The LINUM-STM32H753BI connects the EEPROM memory and the touchscreen sensor to I
 EEPROM MEMORY
 --------------
 
-EEPROM memory used is the 24LC256 with 256Kb.
+EEPROM memory used is the 24LC256 with 256Kb with the control bytes value 0x54.
 
 TOUCHSCREEN SENSOR
 ------------------
@@ -379,6 +381,27 @@ nsh
 Configures the NuttShell (nsh) located at apps/examples/nsh. This
 configuration enables a serial console on UART1.
 
+usbnsh
+------
+
+Configures the NuttShell (nsh) located at apps/examples/nsh. This configuration enables a serial console over USB.
+
+After flasing and reboot your board you should see in your dmesg logs::
+
+    $ sudo dmesg | tail
+    [ 9180.937813] usb 3-1.1.2: SerialNumber: 0
+    [ 9180.946974] cdc_acm 3-1.1.2:1.0: ttyACM0: USB ACM device
+    [ 9715.123387] usb 3-1.1.2: USB disconnect, device number 20
+    [ 9717.393142] usb 3-1.1.2: new full-speed USB device number 21 using xhci_hcd
+    [ 9717.494824] usb 3-1.1.2: New USB device found, idVendor=0525, idProduct=a4a7, bcdDevice= 1.01
+    [ 9717.494834] usb 3-1.1.2: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+    [ 9717.494837] usb 3-1.1.2: Product: CDC/ACM Serial
+    [ 9717.494840] usb 3-1.1.2: Manufacturer: NuttX
+    [ 9717.494842] usb 3-1.1.2: SerialNumber: 0
+    [ 9717.504192] cdc_acm 3-1.1.2:1.0: ttyACM0: USB ACM device
+
+You may need to press ENTER 3 times before the NSH show up.
+
 modbus_slave
 ------------
 
@@ -393,3 +416,45 @@ can enable the ModBus to respond to queries::
 In your pc you will be able to read the ModBus registers using an application like ``mbpoll``::
 
     $ mbpoll -a 10 -b 38400 -t 3 -r 1000 -c 4 /dev/ttyUSB1 -R
+
+modbus_master
+-------------
+
+Configures the ModBus RTU Master located at apps/examples/modbusmaster. This
+configuration enables a RS485 on USART6.
+
+After configuring the desired pins on menuconfig and wiring the RS485 converter, you
+can enable the ModBus Master to create queries for device with address 10::
+
+    nsh> mbmaster
+
+In your pc you will be able to create a ModBus Slave with address 10 using an application like ``diagslave``::
+
+    $ sudo diagslave -a 10 -b 38400 /dev/ttyUSB0
+
+sdcard
+------
+
+Configures the NuttShell (nsh) and enables SD card support. The board has an onboard microSD slot that should be
+automatically registered as the block device /dev/mmcsd0 when an SD card is present.
+
+The SD card can then be mounted by the NSH commands::
+
+    nsh> mount -t vfat /dev/mmcsd0 /mnt
+    nsh> mount
+    nsh> echo "Hello World!!" > /mnt/test_file.txt
+    nhs> ls /mnt/
+    test_file.txt
+    nsh> cat /mnt/test_file.txt
+    Hello World!!
+
+eeprom
+------
+
+Use dd command to write and read data from EEPROM as below:::
+
+    nsh> dd if=/dev/console of=/dev/eeprom bs=1 count=35
+    Witte-Tech Linum-STM32H753BI board
+    nsh> dd if=/dev/eeprom of=/dev/console bs=4 count=35
+    Witte-Tech Linum-STM32H753BI board
+    nsh> 

@@ -130,6 +130,9 @@ config ARCH_X86
 config ARCH_X86_64
 	bool "x86_64"
 	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU
+	select ARCH_HAVE_TESTSET
 	select LIBC_ARCH_ELF_64BIT if LIBC_ARCH_ELF
 	---help---
 		x86-64 architectures.
@@ -174,6 +177,15 @@ config ARCH_SPARC
 	---help---
 		SPARC architectures (SPARC V8)
 
+config ARCH_TRICORE
+	bool "Infineon TriCore"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_TCBINFO
+	---help---
+		Infineon 32-bit AURIX TriCore architectures
+
 endchoice
 
 config ARCH
@@ -194,6 +206,7 @@ config ARCH
 	default "z80"     if ARCH_Z80
 	default "or1k"    if ARCH_OR1K
 	default "sparc"   if ARCH_SPARC
+	default "tricore" if ARCH_TRICORE
 
 source "arch/arm/Kconfig"
 source "arch/arm64/Kconfig"
@@ -211,6 +224,7 @@ source "arch/z16/Kconfig"
 source "arch/z80/Kconfig"
 source "arch/or1k/Kconfig"
 source "arch/sparc/Kconfig"
+source "arch/tricore/Kconfig"
 
 config ARCH_CHIP_CUSTOM
 	bool "Custom Chip Support"
@@ -261,6 +275,10 @@ config ARCH_TOOLCHAIN_GNU
 config ARCH_TOOLCHAIN_CLANG
 	bool
 	select ARCH_TOOLCHAIN_GNU
+	default n
+
+config ARCH_TOOLCHAIN_TASKING
+	bool
 	default n
 
 choice
@@ -523,7 +541,7 @@ config ARCH_HAVE_PERF_EVENTS
 
 config ARCH_PERF_EVENTS
 	bool "Configure hardware performance counting"
-	default y if SCHED_CRITMONITOR || SCHED_IRQMONITOR || RPTUN_PING || SEGGER_SYSVIEW
+	default y if SCHED_CRITMONITOR || SCHED_IRQMONITOR || RPMSG_PING || SEGGER_SYSVIEW
 	default n
 	depends on ARCH_HAVE_PERF_EVENTS
 	---help---
@@ -885,16 +903,26 @@ config ARCH_PGPOOL_SIZE
 endif # ARCH_PGPOOL_MAPPING
 endif # ARCH_ADDRENV && ARCH_NEED_ADDRENV_MAPPING
 
-menuconfig PAGING
+config PAGING
 	bool "On-demand paging"
 	default n
-	depends on ARCH_USE_MMU && !ARCH_ROMPGTABLE
+	depends on BUILD_KERNEL && ARCH_USE_MMU && !ARCH_ROMPGTABLE && !LEGACY_PAGING
 	---help---
-		If set =y in your configation file, this setting will enable the on-demand
-		paging feature as described in
+		If set =y in your configation file, this setting will enable on-demand
+		paging, which relies on a MMU to enable larger virtual memory spaces
+		and map it to physical memory on-demand (usually during a page-fault
+		exception).
+
+menuconfig LEGACY_PAGING
+	bool "Legacy On-demand paging"
+	default n
+	depends on EXPERIMENTAL && ARCH_USE_MMU && !ARCH_ROMPGTABLE
+	---help---
+		If set =y in your configation file, this setting will enable lazy loading
+		backed up by the experimental on-demand paging feature as described in
 		https://nuttx.apache.org/docs/latest/components/paging.html.
 
-if PAGING
+if LEGACY_PAGING
 
 config PAGING_PAGESIZE
 	int "Page size (bytes)"
@@ -1012,7 +1040,7 @@ config PAGING_TIMEOUT_TICKS
 		number if microseconds, then a fatal error will be declared.
 		Default: No timeouts monitored
 
-endif # PAGING
+endif # LEGACY_PAGING
 
 config ARCH_IRQPRIO
 	bool "Prioritized interrupt support"

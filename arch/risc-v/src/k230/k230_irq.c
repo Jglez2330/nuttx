@@ -41,19 +41,6 @@
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_NUTTSBI
-/****************************************************************************
- * Name: sbi_late_initialize  runs in M-mode
- ****************************************************************************/
-
-void sbi_late_initialize(void)
-{
-  /* delegate K230 plic enable to S-mode */
-
-  *((volatile uint32_t *)K230_PLIC_CTRL) = 1;
-}
-#endif
-
 /****************************************************************************
  * Name: up_irqinitialize
  ****************************************************************************/
@@ -141,7 +128,7 @@ void up_disable_irq(int irq)
 
       /* Clear enable bit for the irq */
 
-      if (0 <= extirq && extirq <= 63)
+      if (0 <= extirq && extirq <= K230_PLIC_IRQS)
         {
           modifyreg32(K230_PLIC_ENABLE1 + (4 * (extirq / 32)),
                       1 << (extirq % 32), 0);
@@ -185,7 +172,7 @@ void up_enable_irq(int irq)
 
       /* Enable the irq in PLIC */
 
-      if (0 <= extirq && extirq <= 63)
+      if (0 <= extirq && extirq < K230_PLIC_IRQS)
         {
           modifyreg32(K230_PLIC_ENABLE1 + (4 * (extirq / 32)),
                       0, 1 << (extirq % 32));

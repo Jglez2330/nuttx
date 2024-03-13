@@ -221,7 +221,7 @@ void x86_64_timer_initialize(void);
 
 /* Defined in board/x86_64_network.c */
 
-#ifdef CONFIG_NET
+#if defined(CONFIG_NET) && !defined(CONFIG_NETDEV_LATEINIT)
 void x86_64_netinitialize(void);
 #else
 #  define x86_64_netinitialize()
@@ -233,6 +233,12 @@ void x86_64_usbuninitialize(void);
 #else
 #  define x86_64_usbinitialize()
 #  define x86_64_usbuninitialize()
+#endif
+
+/* Defined in x86_64_pci.c */
+
+#ifdef CONFIG_PCI
+void x86_64_pci_init(void);
 #endif
 
 #endif /* __ASSEMBLY__ */
